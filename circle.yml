@@ -1,0 +1,17 @@
+machine:
+  environment:
+    GOPATH_REPO: ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
+    HOME_REPO: ${HOME}/${CIRCLE_PROJECT_REPONAME}
+  post:
+    - mkdir -p $GOPATH_REPO
+    - rsync -a --delete $HOME_REPO/ $GOPATH_REPO
+    - rm -rf $HOME_REPO
+    - ln -s $GOPATH_REPO $HOME_REPO
+dependencies:
+  override:
+    - go get github.com/mattn/goveralls
+test:
+  override:
+    - go test -v -covermode=count -coverprofile=profile.cov .
+  post:
+    - goveralls -coverprofile=profile.cov -service=circle-ci -repotoken=${COVERALLS_TOKEN}
