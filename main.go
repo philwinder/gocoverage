@@ -12,53 +12,56 @@ import (
 )
 
 const (
-	cov_tmp_file = "profile.cov.tmp"
-	cover_header = `mode: count
+	covTmpFile  = "profile.cov.tmp"
+	coverHeader = `mode: count
 `
 )
 
 var (
-	dir             string
-	ignore          string
-	output_filename string
-	fileIgnore      *regexp.Regexp
+	dir            string
+	ignore         string
+	outputFilename string
+	fileIgnore     *regexp.Regexp
 )
 
 func init() {
 	flag.StringVar(&dir, "dir", ".", "Directory to start recursing for tests")
 	flag.StringVar(&ignore, "ignore", `(vendor|\.\w+)`, "RegEx that ignores files and folders. Default ignores hidden folders and vendor folder.")
-	flag.StringVar(&output_filename, "output", "profile.cov", "Filename for the output coverage file.")
+	flag.StringVar(&outputFilename, "output", "profile.cov", "Filename for the output coverage file.")
 	flag.Parse()
 	fileIgnore = regexp.MustCompile(ignore)
 }
 
 func main() {
-	filepath.Walk(dir, PerformCoverage)
-	CreateOutputFile()
-	filepath.Walk(dir, CollateCoverage)
-	filepath.Walk(dir, DeleteFiles)
+	filepath.Walk(dir, performCoverage)
+	createOutputFile()
+	filepath.Walk(dir, collateCoverage)
+	filepath.Walk(dir, deleteFiles)
 }
 
-func PerformCoverage(path string, info os.FileInfo, err error) error {
+// A filepath.Walk function to use `go test` to generate all the coverage reports
+func performCoverage(path string, info os.FileInfo, err error) error {
 	if err == nil && info.IsDir() && hasGoFile(path) && !fileIgnore.MatchString(path) {
 		path = "./" + path
 		log.Println(path)
-		exec.Command("go", "test", "-covermode=count", "-coverprofile="+path+"/"+cov_tmp_file, path).Output()
+		exec.Command("go", "test", "-covermode=count", "-coverprofile="+path+"/"+covTmpFile, path).Output()
 	}
 	return nil
 }
 
-func CreateOutputFile() {
-	err := ioutil.WriteFile(output_filename, []byte(cover_header), 0644)
+// Creates the final output file
+func createOutputFile() {
+	err := ioutil.WriteFile(outputFilename, []byte(coverHeader), 0644)
 	check(err)
 }
 
-func CollateCoverage(path string, info os.FileInfo, err error) error {
-	if err == nil && !info.IsDir() && strings.Contains(path, cov_tmp_file) {
+// A filepath.Walk function to collate the coverage reports together and saves into output file
+func collateCoverage(path string, info os.FileInfo, err error) error {
+	if err == nil && !info.IsDir() && strings.Contains(path, covTmpFile) {
 		contentsB, err := ioutil.ReadFile(path)
 		check(err)
 		contents := strings.Replace(string(contentsB), "mode: count\n", "", 1)
-		f, err := os.OpenFile(output_filename, os.O_APPEND|os.O_WRONLY, 0600)
+		f, err := os.OpenFile(outputFilename, os.O_APPEND|os.O_WRONLY, 0600)
 		check(err)
 		_, err = f.WriteString(contents)
 		check(err)
@@ -67,8 +70,9 @@ func CollateCoverage(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
-func DeleteFiles(path string, info os.FileInfo, err error) error {
-	if err == nil && !info.IsDir() && strings.Contains(path, cov_tmp_file) {
+// A filepath.Walk function to delete all the temporary files
+func deleteFiles(path string, info os.FileInfo, err error) error {
+	if err == nil && !info.IsDir() && strings.Contains(path, covTmpFile) {
 		os.Remove(path)
 	}
 	return nil

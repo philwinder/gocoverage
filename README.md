@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/philwinder/gocoverage.svg?style=svg)](https://circleci.com/gh/philwinder/gocoverage) [![Coverage Status](https://coveralls.io/repos/github/philwinder/gocoverage/badge.svg?branch=master)](https://coveralls.io/github/philwinder/gocoverage?branch=master)
+[![CircleCI](https://circleci.com/gh/philwinder/gocoverage.svg?style=svg)](https://circleci.com/gh/philwinder/gocoverage) [![Coverage Status](https://coveralls.io/repos/github/philwinder/gocoverage/badge.svg?branch=master)](https://coveralls.io/github/philwinder/gocoverage?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/philwinder/gocoverage)](https://goreportcard.com/report/github.com/philwinder/gocoverage)
 # gocoverage
 A simple flexible tool to generate a unified coverage file for all your Go code.
 
