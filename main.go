@@ -12,15 +12,14 @@ import (
 )
 
 const (
-	covTmpFile  = "profile.cov.tmp"
-	coverHeader = `mode: count
-`
+	covTmpFile = "profile.cov.tmp"
 )
 
 var (
 	dir            string
 	ignore         string
 	outputFilename string
+	covermode      string
 	fileIgnore     *regexp.Regexp
 )
 
@@ -28,6 +27,7 @@ func init() {
 	flag.StringVar(&dir, "dir", ".", "Directory to start recursing for tests")
 	flag.StringVar(&ignore, "ignore", `(vendor|\.\w+)`, "RegEx that ignores files and folders. Default ignores hidden folders and vendor folder.")
 	flag.StringVar(&outputFilename, "output", "profile.cov", "Filename for the output coverage file.")
+	flag.StringVar(&covermode, "covermode", "count", "-covermode option for go test. It can be one of: set; count; atomic.")
 	flag.Parse()
 	fileIgnore = regexp.MustCompile(ignore)
 }
@@ -44,14 +44,14 @@ func performCoverage(path string, info os.FileInfo, err error) error {
 	if err == nil && info.IsDir() && hasGoFile(path) && !fileIgnore.MatchString(path) {
 		path = "./" + path
 		log.Println(path)
-		exec.Command("go", "test", "-covermode=count", "-coverprofile="+path+"/"+covTmpFile, path).Output()
+		exec.Command("go", "test", "-covermode="+covermode, "-coverprofile="+path+"/"+covTmpFile, path).Output()
 	}
 	return nil
 }
 
 // Creates the final output file
 func createOutputFile() {
-	err := ioutil.WriteFile(outputFilename, []byte(coverHeader), 0644)
+	err := ioutil.WriteFile(outputFilename, []byte("mode: "+covermode+"\n"), 0644)
 	check(err)
 }
 
@@ -60,7 +60,7 @@ func collateCoverage(path string, info os.FileInfo, err error) error {
 	if err == nil && !info.IsDir() && strings.Contains(path, covTmpFile) {
 		contentsB, err := ioutil.ReadFile(path)
 		check(err)
-		contents := strings.Replace(string(contentsB), "mode: count\n", "", 1)
+		contents := strings.Replace(string(contentsB), "mode: "+covermode+"\n", "", 1)
 		f, err := os.OpenFile(outputFilename, os.O_APPEND|os.O_WRONLY, 0600)
 		check(err)
 		_, err = f.WriteString(contents)
